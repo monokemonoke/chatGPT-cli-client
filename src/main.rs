@@ -35,8 +35,7 @@ struct ResUsage {
     total_tokens: i32,
 }
 
-#[tokio::main]
-async fn main() -> reqwest::Result<()> {
+async fn chat_once() -> reqwest::Result<()> {
     let _message = Text::new("").with_help_message("").prompt().unwrap();
 
     let request_json = ChatRequest {
@@ -74,4 +73,11 @@ async fn main() -> reqwest::Result<()> {
 
     println!("{}", res_str);
     Ok(())
+}
+
+#[tokio::main]
+async fn main() -> reqwest::Result<()> {
+    loop {
+        chat_once().await.expect("end")
+    }
 }
