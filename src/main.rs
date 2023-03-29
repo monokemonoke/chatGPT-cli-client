@@ -1,4 +1,4 @@
-// use inquire::Text;
+use inquire::Text;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -37,17 +37,15 @@ struct ResUsage {
 
 #[tokio::main]
 async fn main() -> reqwest::Result<()> {
-    // let _message = Text::new("").with_help_message("").prompt().unwrap();
+    let _message = Text::new("").with_help_message("").prompt().unwrap();
 
     let request_json = ChatRequest {
         model: String::from("text-davinci-003"),
-        prompt: String::from("Say this is a test"),
-        max_tokens: 7,
+        prompt: _message,
+        max_tokens: 1000,
         temperature: 0,
     };
     let request_json = serde_json::to_string(&request_json).unwrap();
-
-    // println!("Your input: {}", _message);
 
     let client = reqwest::Client::new();
     let res = client
@@ -70,6 +68,7 @@ async fn main() -> reqwest::Result<()> {
         .choices
         .iter()
         .map(|v| v.text.clone())
+        .map(|v| v.replace("\n\n", ""))
         .collect::<Vec<_>>()
         .join("");
 
