@@ -3,7 +3,7 @@ use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::env;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ChatRequest {
     model: String,
     prompt: String,
@@ -11,25 +11,29 @@ struct ChatRequest {
     temperature: i32,
 }
 
-// {
-//     "id": "cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
-//     "object": "text_completion",
-//     "created": 1589478378,
-//     "model": "text-davinci-003",
-//     "choices": [
-//       {
-//         "text": "\n\nThis is indeed a test",
-//         "index": 0,
-//         "logprobs": null,
-//         "finish_reason": "length"
-//       }
-//     ],
-//     "usage": {
-//       "prompt_tokens": 5,
-//       "completion_tokens": 7,
-//       "total_tokens": 12
-//     }
-//   }
+#[derive(Debug, Serialize, Deserialize)]
+struct ChatResponse {
+    id: String,
+    object: String,
+    created: i32,
+    model: String,
+    choices: Vec<ResChoice>,
+    usage: ResUsage,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ResChoice {
+    index: i32,
+    text: String,
+    finish_reason: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ResUsage {
+    prompt_tokens: i32,
+    completion_tokens: i32,
+    total_tokens: i32,
+}
 
 #[tokio::main]
 async fn main() -> reqwest::Result<()> {
@@ -61,7 +65,9 @@ async fn main() -> reqwest::Result<()> {
         .await
         .unwrap();
 
-    println!("{}", res);
+    let res_json: ChatResponse = serde_json::from_str(&res).unwrap();
+
+    println!("{:#?}", res_json);
 
     Ok(())
 }
