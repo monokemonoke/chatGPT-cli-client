@@ -66,8 +66,13 @@ async fn main() -> reqwest::Result<()> {
         .unwrap();
 
     let res_json: ChatResponse = serde_json::from_str(&res).unwrap();
+    let res_str = res_json
+        .choices
+        .iter()
+        .map(|v| v.text.clone())
+        .collect::<Vec<_>>()
+        .join("");
 
-    println!("{:#?}", res_json);
-
+    println!("{}", res_str);
     Ok(())
 }
