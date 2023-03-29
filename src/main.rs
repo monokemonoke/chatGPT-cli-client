@@ -78,7 +78,6 @@ async fn chat_once() -> reqwest::Result<()> {
         .choices
         .iter()
         .map(|v| v.message.content.clone())
-        .map(|v| v.replace("\n\n", ""))
         .collect::<Vec<_>>()
         .join("");
 
