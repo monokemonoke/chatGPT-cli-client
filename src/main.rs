@@ -1,7 +1,8 @@
+mod config;
+
 use inquire::Text;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatRequest {
@@ -65,10 +66,7 @@ async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<Vec<ResChoice>
     let res = client
         .post("https://api.openai.com/v1/chat/completions")
         .header(CONTENT_TYPE, "application/json")
-        .header(
-            AUTHORIZATION,
-            format!("Bearer {}", env::var("OPENAI_API_KEY").unwrap()),
-        )
+        .header(AUTHORIZATION, format!("Bearer {}", config::OPENAI_API_KEY))
         .body(request_json)
         .send()
         .await
