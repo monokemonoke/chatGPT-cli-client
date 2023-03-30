@@ -70,11 +70,9 @@ async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<ChatResponse> 
         .header(AUTHORIZATION, format!("Bearer {}", config::OPENAI_API_KEY))
         .body(request_json)
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
 
     let res_json: ChatResponse = serde_json::from_str(&res).unwrap();
     Ok(res_json)
