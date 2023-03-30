@@ -3,6 +3,7 @@ mod config;
 use inquire::Text;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
+use spinners::Spinner;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatRequest {
@@ -55,7 +56,7 @@ struct ResUsage {
     total_tokens: i32,
 }
 
-async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<Vec<ResChoice>> {
+async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<ChatResponse> {
     let request_json = ChatRequest {
         messages: messages.to_vec(),
         model: String::from("gpt-3.5-turbo"),
@@ -76,15 +77,7 @@ async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<Vec<ResChoice>
         .unwrap();
 
     let res_json: ChatResponse = serde_json::from_str(&res).unwrap();
-    let res_str = res_json
-        .choices
-        .iter()
-        .map(|v| v.message.content.clone())
-        .collect::<Vec<_>>()
-        .join("");
-
-    println!("{}", res_str);
-    Ok(res_json.choices)
+    Ok(res_json)
 }
 
 async fn chat() -> reqwest::Result<()> {
@@ -103,13 +96,28 @@ async fn chat() -> reqwest::Result<()> {
             });
         }
 
+        let mut sp = Spinner::new(
+            spinners::Spinners::Dots,
+            "waiting for the responses...".into(),
+        );
         let res = chat_once(&msgs).await;
+        sp.stop();
+        print!("\r                             \r");
         if let Err(_) = res {
             break;
         }
 
         if let Ok(res) = res {
-            msgs.extend(res.iter().map(|v| ReqMessage {
+            println!(
+                "{}",
+                res.choices
+                    .iter()
+                    .map(|v| v.message.content.clone())
+                    .collect::<Vec<_>>()
+                    .join("")
+            );
+
+            msgs.extend(res.choices.iter().map(|v| ReqMessage {
                 role: v.message.role.clone(),
                 content: v.message.content.clone(),
             }));
