@@ -54,14 +54,14 @@ struct ResUsage {
     total_tokens: i32,
 }
 
-async fn chat_once(messages: Vec<ReqMessage>) -> reqwest::Result<()> {
+async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<Vec<ResChoice>> {
     let request_json = ChatRequest {
         model: String::from("gpt-3.5-turbo"),
         // messages: vec![ReqMessage {
         //     role: String::from("user"),
         //     content: _message,
         // }],
-        messages,
+        messages: messages.to_vec(),
     };
     let request_json = serde_json::to_string(&request_json).unwrap();
 
@@ -90,20 +90,29 @@ async fn chat_once(messages: Vec<ReqMessage>) -> reqwest::Result<()> {
         .join("");
 
     println!("{}", res_str);
-    Ok(())
+    Ok(res_json.choices)
 }
 
 async fn chat() -> reqwest::Result<()> {
     let mut msgs: Vec<ReqMessage> = Vec::new();
 
-    let msg = Text::new("").with_help_message("").prompt().unwrap();
+    loop {
+        let msg = Text::new("").with_help_message("").prompt().unwrap();
 
-    msgs.push(ReqMessage {
-        role: "user".to_string(),
-        content: msg,
-    });
+        msgs.push(ReqMessage {
+            content: msg,
+            role: "user".to_string(),
+        });
 
-    let _ = chat_once(msgs).await;
+        let res = chat_once(&msgs).await.unwrap();
+
+        msgs.extend(res.iter().map(|v| ReqMessage {
+            role: v.message.role.clone(),
+            content: v.message.content.clone(),
+        }));
+
+        println!("{:?}", msgs);
+    }
 
     Ok(())
 }
