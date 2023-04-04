@@ -1,5 +1,6 @@
 mod config;
 
+use inquire::InquireError::OperationInterrupted;
 use inquire::Text;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
@@ -71,10 +72,10 @@ async fn chat_once(messages: &Vec<ReqMessage>) -> reqwest::Result<ChatResponse> 
         .body(request_json)
         .send()
         .await?
-        .text()
-        .await?;
+        .error_for_status()?;
 
-    let res_json: ChatResponse = serde_json::from_str(&res).unwrap();
+    let res_str = res.text().await?;
+    let res_json: ChatResponse = serde_json::from_str(&res_str).unwrap();
     Ok(res_json)
 }
 
@@ -83,7 +84,13 @@ async fn chat() -> reqwest::Result<()> {
 
     loop {
         let msg = Text::new("").with_help_message("").prompt();
-        if let Err(_) = msg {
+        if let Err(e) = msg {
+            match e {
+                OperationInterrupted => {}
+                _ => {
+                    dbg!(e);
+                }
+            };
             break;
         }
 
@@ -101,7 +108,12 @@ async fn chat() -> reqwest::Result<()> {
         let res = chat_once(&msgs).await;
         sp.stop();
         print!("\r                             \r");
-        if let Err(_) = res {
+        if let Err(e) = res {
+            if e.status().unwrap_or_default() == 429 {
+                println!("Rate limit reached for requests");
+            } else {
+                dbg!(e);
+            }
             break;
         }
 
